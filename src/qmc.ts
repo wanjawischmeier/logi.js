@@ -355,12 +355,14 @@ class QMC {
                 all_pi.add(i);
             }
 
-            // snapshot this iteration (increment iteration counter for human-friendly numbering)
-            iterations.push({
-                iteration: ++iterCount,
-                groups: JSON.parse(JSON.stringify(groups)),
-                joins: joinsThisIteration
-            });
+            // snapshot this iteration only if something happened (has groups or joins)
+            if (Object.keys(groups).length > 0 || joinsThisIteration.length > 0) {
+                iterations.push({
+                    iteration: ++iterCount,
+                    groups: JSON.parse(JSON.stringify(groups)),
+                    joins: joinsThisIteration
+                });
+            }
 
             if (should_stop) {
                 break;
