@@ -7,6 +7,23 @@ import { Parser } from "./parser";
 import { Converter } from "./converter";
 import { TruthTable } from "./truthTable";
 
+type JoinEntry = { term: string; parents: string[]; minterms: number[] };
+type IterationSnapshot = { iteration: number; groups: Record<string, string[]>; joins: JoinEntry[] };
+type PrimeImplicantInfo = { term: string; minterms: number[]; isEssential: boolean };
+
+export type QMCDetails = {
+    numVars: number;
+    minterms: number[];
+    dontCares: number[];
+    initialGroups: Record<string, string[]>;
+    iterations: IterationSnapshot[];
+    primeImplicants: PrimeImplicantInfo[];
+    chart: Record<string, string[]>; // keys are minterm indices (as strings) -> list of implicants
+};
+
+export type QMCDetailedExpressionsObjects = { expressions: Operation[]; details: QMCDetails };
+export type QMCDetailedExpressionsStrings = { expressions: string[]; details: QMCDetails };
+
 class Petrick {
     // Petrick's method
     // (1) substitution()
@@ -247,7 +264,18 @@ class QMC {
         return newResult;
     }
 
-    public solve(mt: number[], dc: number[] = [], isReturnObject = true) {
+    public solve(mt: number[], dc?: number[], isReturnObject?: true): Operation[];
+    public solve(mt: number[], dc?: number[], isReturnObject?: false): string[];
+    public solve(mt: number[], dc?: number[], isReturnObject?: true, returnDetailed?: true): QMCDetailedExpressionsObjects;
+    public solve(mt: number[], dc?: number[], isReturnObject?: false, returnDetailed?: true): QMCDetailedExpressionsStrings;
+    public solve(mt: number[], dc: number[] = [], isReturnObject = true, returnDetailed = false):
+        Operation[] | string[] | QMCDetailedExpressionsObjects | QMCDetailedExpressionsStrings {
+        // detailed output collectors
+        const iterations: { iteration: number; groups: Record<string, string[]>; joins: { term: string; parents: string[]; minterms: number[] }[] }[] = [];
+        const parentsMap: Record<string, string[]> = {};
+        const termMinterms: Record<string, number[]> = {};
+        let iterCount = 0;
+
         mt.sort(this.sortNumber);
         const minterms = mt.concat(dc);
         minterms.sort(this.sortNumber);
@@ -257,12 +285,23 @@ class QMC {
 
         // primary grouping starts
         for (const minterm of minterms) {
-            if (groups[minterm.toString(2).split('1').length - 1]) {
-                groups[minterm.toString(2).split('1').length - 1].push(minterm.toString(2).padStart(size, '0'));
+            const bin = minterm.toString(2).padStart(size, '0');
+            const key = bin.split('1').length - 1;
+            if (groups[key]) {
+                groups[key].push(bin);
             } else {
-                groups[minterm.toString(2).split('1').length - 1] = [minterm.toString(2).padStart(size, '0')];
+                groups[key] = [bin];
             }
+            // record initial term -> its single minterm so we can expand later
+            termMinterms[bin] = [parseInt(bin, 2)];
         }
+
+        // snapshot initial groups (iteration 0)
+        iterations.push({
+            iteration: 0,
+            groups: JSON.parse(JSON.stringify(groups)),
+            joins: []
+        });
 
         while (true) {
             const tmp: Record<string, string[]> = { ...groups };
@@ -273,18 +312,34 @@ class QMC {
             const l: string[] = Object.keys(tmp).sort();
 
 
+            // collect joins for this iteration
+            const joinsThisIteration: { term: string; parents: string[]; minterms: number[] }[] = [];
+
             for (let i = 0; i < l.length - 1; i++) {
                 for (const j of tmp[l[i]]) {
                     for (const k of tmp[l[i + 1]]) {
                         const res: [boolean, number | null | undefined] = this.compare(j, k);
                         if (res[0]) {
+                            const newTerm = j.slice(0, res[1]!) + '-' + j.slice(res[1]! + 1);
                             try {
-                                if (!groups[m].includes(j.slice(0, res[1]!) + '-' + j.slice(res[1]! + 1))) {
-                                    groups[m].push(j.slice(0, res[1]!) + '-' + j.slice(res[1]! + 1));
+                                if (!groups[m].includes(newTerm)) {
+                                    groups[m].push(newTerm);
                                 }
                             } catch (e) {
-                                groups[m] = [j.slice(0, res[1]!) + '-' + j.slice(res[1]! + 1)];
+                                groups[m] = [newTerm];
                             }
+
+                            // If this combined term is new, record its parents and the minterms it covers.
+                            if (!parentsMap[newTerm]) {
+                                parentsMap[newTerm] = [j, k];
+                                termMinterms[newTerm] = this.findminterms(newTerm);
+                                joinsThisIteration.push({
+                                    term: newTerm,
+                                    parents: [j, k],
+                                    minterms: termMinterms[newTerm].slice()
+                                });
+                            }
+
                             should_stop = false;
                             marked.add(j);
                             marked.add(k);
@@ -299,6 +354,13 @@ class QMC {
             for (const i of local_unmarked) {
                 all_pi.add(i);
             }
+
+            // snapshot this iteration (increment iteration counter for human-friendly numbering)
+            iterations.push({
+                iteration: ++iterCount,
+                groups: JSON.parse(JSON.stringify(groups)),
+                joins: joinsThisIteration
+            });
 
             if (should_stop) {
                 break;
@@ -344,6 +406,40 @@ class QMC {
             for (let i = 0; i < newP.length; i++) {
                 // piとp[i]を結合し、空の要素を削除する（piがないこともあるため）
                 result.push(pi.concat(newP[i]).filter(i => i.length > 0).sort(this.sortString).join(' + '));
+            }
+        }
+
+        if (returnDetailed) {
+            // prepare prime implicants info & chart for details
+            const primeImplicants = Array.from(all_pi).map(term => {
+                const mins = termMinterms[term] || this.findminterms(term);
+                const refined = this.refine(mins, dc);
+                return {
+                    term,
+                    minterms: refined,
+                    isEssential: EPI.includes(term)
+                };
+            });
+
+            const detailed = {
+                numVars: size,
+                minterms: mt,
+                dontCares: dc,
+                initialGroups: iterations[0].groups,
+                iterations,
+                primeImplicants,
+                chart // chart was already built earlier
+            };
+
+            if (isReturnObject) {
+                const newResult: Operation[] = [];
+                for (const r of result) {
+                    const parser = new Parser(r);
+                    newResult.push(parser.parse());
+                }
+                return { expressions: newResult, details: detailed };
+            } else {
+                return { expressions: result, details: detailed };
             }
         }
 
