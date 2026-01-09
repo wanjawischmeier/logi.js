@@ -7,9 +7,9 @@ import { Parser } from "./parser";
 import { Converter } from "./converter";
 import { TruthTable } from "./truthTable";
 
-type JoinEntry = { term: string; parents: string[]; minterms: number[] };
-type IterationSnapshot = { iteration: number; groups: Record<string, string[]>; joins: JoinEntry[] };
-type PrimeImplicantInfo = { term: string; minterms: number[]; isEssential: boolean };
+export type JoinEntry = { term: string; parents: string[]; minterms: number[] };
+export type IterationSnapshot = { iteration: number; groups: Record<string, string[]>; joins: JoinEntry[] };
+export type PrimeImplicantInfo = { term: string; minterms: number[]; isEssential: boolean };
 
 export type QMCDetails = {
     numVars: number;

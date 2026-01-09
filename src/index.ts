@@ -5,4 +5,4 @@ export { Parser } from './parser';
 export { Converter } from './converter';
 export { TruthTable } from './truthTable';
 export { TimingDiagram } from './timingDiagram';
-export { QMC } from './qmc';
+export { QMC, JoinEntry, IterationSnapshot, PrimeImplicantInfo, QMCDetails, QMCDetailedExpressionsObjects, QMCDetailedExpressionsStrings } from './qmc';
