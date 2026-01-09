@@ -25,6 +25,7 @@
   ],
   "scripts": {
     "test": "jest",
+    "prepare": "npm run build",
     "build": "npm run build:cjs && npm run build:esm && npm run build:browser",
     "build:browser": "SET NODE_ENV=production && webpack --mode production && SET NODE_ENV=development && webpack --mode production",
     "build:cjs": "tsc -p tsconfig.cjs.json",
