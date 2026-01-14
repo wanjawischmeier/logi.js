@@ -33,12 +33,33 @@ class Petrick {
     }
 
     private petrick(p: string[][]) {
+        // Handle edge case where p is empty or p[0] is undefined
+        if (!p || p.length === 0 || !p[0]) {
+            return [];
+        }
+
         while (p.length > 1) {
             p[0] = this.distribute(p[0], p[1]);
             p.splice(1, 1);
         }
+
+        // Handle edge case where p[0] is empty after distribution
+        if (p[0].length === 0) {
+            return [];
+        }
+
         // 配列要素の文字列をソートし(例えば'ACB' -> 'ABC')、文字列の長さで全体の配列をソートする
-        const all_patterns = p[0].map(s => [...s].sort().join('')).sort((a, b) => a.length - b.length);
+        // Filter out undefined/null values before spreading
+        const all_patterns = p[0]
+            .filter(s => s !== undefined && s !== null && s !== '')
+            .map(s => [...s].sort().join(''))
+            .sort((a, b) => a.length - b.length);
+
+        // Handle edge case where all_patterns is empty after filtering
+        if (all_patterns.length === 0) {
+            return [];
+        }
+
         const min_length = all_patterns[0].length;
         return all_patterns.filter(s => s.length === min_length);
     }
