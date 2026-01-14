@@ -50,10 +50,21 @@ class Petrick {
     }
 
     private petrick(p: string[][]) {
+        // Handle edge case where p is empty or p[0] is undefined
+        if (!p || p.length === 0 || !p[0]) {
+            return [];
+        }
+
         while (p.length > 1) {
             p[0] = this.distribute(p[0], p[1]);
             p.splice(1, 1);
         }
+
+        // Handle edge case where p[0] is empty after distribution
+        if (p[0].length === 0) {
+            return [];
+        }
+
         // 配列要素の文字列をソートし(例えば'ACB' -> 'ABC')、文字列の長さで全体の配列をソートする
         const all_patterns = p[0].map(s => [...s].sort().join('')).sort((a, b) => a.length - b.length);
         const min_length = all_patterns[0].length;
