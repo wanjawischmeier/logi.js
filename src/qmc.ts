@@ -54,29 +54,29 @@ class Petrick {
         if (!p || p.length === 0 || !p[0]) {
             return [];
         }
-        
+
         while (p.length > 1) {
             p[0] = this.distribute(p[0], p[1]);
             p.splice(1, 1);
         }
-        
+
         // Handle edge case where p[0] is empty after distribution
         if (p[0].length === 0) {
             return [];
         }
-        
+
         // 配列要素の文字列をソートし(例えば'ACB' -> 'ABC')、文字列の長さで全体の配列をソートする
         // Filter out undefined/null values before spreading
         const all_patterns = p[0]
             .filter(s => s !== undefined && s !== null && s !== '')
             .map(s => [...s].sort().join(''))
             .sort((a, b) => a.length - b.length);
-        
+
         // Handle edge case where all_patterns is empty after filtering
         if (all_patterns.length === 0) {
             return [];
         }
-        
+
         const min_length = all_patterns[0].length;
         return all_patterns.filter(s => s.length === min_length);
     }
@@ -263,7 +263,7 @@ class QMC {
         const table = truthTable.get();
         const converter = new Converter();
         const trueDecimals = converter.getTrueDecimals(table);
-        const result = this.solve(trueDecimals, [], false);
+        const result = this.solve(trueDecimals, [], false, false, variableNames.length);
 
         const newResult: (string | Operation)[] = [];
 
@@ -285,11 +285,11 @@ class QMC {
         return newResult;
     }
 
-    public solve(mt: number[], dc?: number[], isReturnObject?: true): Operation[];
-    public solve(mt: number[], dc?: number[], isReturnObject?: false): string[];
-    public solve(mt: number[], dc?: number[], isReturnObject?: true, returnDetailed?: true): QMCDetailedExpressionsObjects;
-    public solve(mt: number[], dc?: number[], isReturnObject?: false, returnDetailed?: true): QMCDetailedExpressionsStrings;
-    public solve(mt: number[], dc: number[] = [], isReturnObject = true, returnDetailed = false):
+    public solve(mt: number[], dc?: number[], isReturnObject?: true, returnDetailed?: false, numVars?: number): Operation[];
+    public solve(mt: number[], dc?: number[], isReturnObject?: false, returnDetailed?: false, numVars?: number): string[];
+    public solve(mt: number[], dc?: number[], isReturnObject?: true, returnDetailed?: true, numVars?: number): QMCDetailedExpressionsObjects;
+    public solve(mt: number[], dc?: number[], isReturnObject?: false, returnDetailed?: true, numVars?: number): QMCDetailedExpressionsStrings;
+    public solve(mt: number[], dc: number[] = [], isReturnObject = true, returnDetailed = false, numVars?: number):
         Operation[] | string[] | QMCDetailedExpressionsObjects | QMCDetailedExpressionsStrings {
         // detailed output collectors
         const iterations: { iteration: number; groups: Record<string, string[]>; joins: { term: string; parents: string[]; minterms: number[] }[] }[] = [];
@@ -300,7 +300,8 @@ class QMC {
         mt.sort(this.sortNumber);
         const minterms = mt.concat(dc);
         minterms.sort(this.sortNumber);
-        const size = (minterms[minterms.length - 1]).toString(2).length;
+        // Use provided numVars, or calculate from largest minterm as fallback
+        const size = numVars ?? (minterms.length > 0 ? (minterms[minterms.length - 1]).toString(2).length : 1);
         let groups: Record<string, string[]> = {};
         const all_pi: Set<string> = new Set();
 
