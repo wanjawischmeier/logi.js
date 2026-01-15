@@ -439,7 +439,7 @@ class QMC {
             const newP = new Petrick(Object.values(P)).get();
             for (let i = 0; i < newP.length; i++) {
                 // piとp[i]を結合し、空の要素を削除する（piがないこともあるため）
-                result.push(pi.concat(newP[i]).filter(i => i.length > 0).sort(this.sortString).join(' + '));
+                result.push(pi.concat(newP[i]).filter(i => i && i.length > 0).sort(this.sortString).join(' + '));
             }
         }
 
