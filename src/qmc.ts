@@ -113,6 +113,11 @@ class Petrick {
     }
 
     private backSubstitution(p: string[]) {
+        // Guard against empty array
+        if (p.length === 0 || !p[0]) {
+            return [];
+        }
+
         const newP = Array.from({ length: p.length }, () => Array.from({ length: p[0].length }, () => '0'));
         for (let i = 0; i < p.length; i++) {
             for (let j = 0; j < p[i].length; j++) {
