@@ -338,6 +338,11 @@ class QMC {
             const joinsThisIteration: { term: string; parents: string[]; minterms: number[] }[] = [];
 
             for (let i = 0; i < l.length - 1; i++) {
+                // Guard against undefined arrays in tmp
+                if (!tmp[l[i]] || !tmp[l[i + 1]]) {
+                    continue;
+                }
+
                 for (const j of tmp[l[i]]) {
                     for (const k of tmp[l[i + 1]]) {
                         const res: [boolean, number | null | undefined] = this.compare(j, k);
