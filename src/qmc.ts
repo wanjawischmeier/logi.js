@@ -97,18 +97,34 @@ class Petrick {
 
     private substitution(p: string[][][]) {
         const newP: string[][] = [];
+
         for (let i = 0; i < p.length; i++) {
             for (let j = 0; j < p[i].length; j++) {
                 const t = p[i][j].join('');
-                if (!this.allocated[t]) {
-                    this.allocated[String.fromCharCode(65 + Object.keys(this.allocated).length)] = t;
+
+                // Check if this term value has already been allocated
+                const existingKey = Object.keys(this.allocated).find(k => this.allocated[k] === t);
+
+                if (!existingKey) {
+                    // Find the next available character that hasn't been used as a key yet
+                    let charCode = 65;
+                    while (this.allocated[String.fromCharCode(charCode)] !== undefined) {
+                        charCode++;
+                    }
+                    const newKey = String.fromCharCode(charCode);
+                    this.allocated[newKey] = t;
                 }
+
                 if (!newP[i]) {
                     newP[i] = [];
                 }
-                newP[i][j] = Object.keys(this.allocated).find(k => this.allocated[k] === t) as string;
+
+                // Find the substitution variable for this term
+                const substitutionVar = Object.keys(this.allocated).find(k => this.allocated[k] === t);
+                newP[i][j] = substitutionVar as string;
             }
         }
+
         return newP;
     }
 
