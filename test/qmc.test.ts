@@ -47,4 +47,10 @@ test('QMC', () => {
     let stringResult = qmc.solveFromExp(exp, false);
     expected = ["B'D + BD'"];
     expect(stringResult).toEqual(expected);
+
+    // Petrick's method should not return duplicate minimal solutions
+    mt = [0, 1, 2, 3, 8, 11, 12, 14, 15];
+    dc = [4, 6, 7, 9, 13];
+    stringResult = qmc.solve(mt, dc, false, true, 4).expressions;
+    expect(stringResult.length).toBe(new Set(stringResult).size);
 });

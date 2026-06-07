@@ -78,7 +78,7 @@ class Petrick {
         }
 
         const min_length = all_patterns[0].length;
-        return all_patterns.filter(s => s.length === min_length);
+        return Array.from(new Set(all_patterns.filter(s => s.length === min_length)));
     }
 
     private distribute(a: string[], b: string[]) {
