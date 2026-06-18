@@ -381,12 +381,13 @@ class QMC {
                             if (!parentsMap[newTerm]) {
                                 parentsMap[newTerm] = [j, k];
                                 termMinterms[newTerm] = this.findminterms(newTerm);
-                                joinsThisIteration.push({
-                                    term: newTerm,
-                                    parents: [j, k],
-                                    minterms: termMinterms[newTerm].slice()
-                                });
                             }
+                            // Always push, so every valid parent pair gets its own join entry
+                            joinsThisIteration.push({
+                                term: newTerm,
+                                parents: [j, k],
+                                minterms: termMinterms[newTerm].slice()
+                            });
 
                             should_stop = false;
                             marked.add(j);
