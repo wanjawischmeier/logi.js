@@ -269,6 +269,10 @@ class QMC {
                 return aDec - bDec;
             }
         }
+
+        private countLiterals(terms: string[]) {
+            return terms.reduce((count, term) => count + (term.match(/[A-Z]/gi)?.length ?? 0), 0);
+        }
     }
 
     public solveFromExp(expression: string, isReturnObject = true) {
@@ -454,9 +458,26 @@ class QMC {
                 P[i] = chart[i].map(j => this.findVariables(j));
             }
             const newP = new Petrick(Object.values(P)).get();
+            const candidates: string[][] = [];
             for (let i = 0; i < newP.length; i++) {
                 // piとp[i]を結合し、空の要素を削除する（piがないこともあるため）
-                result.push(pi.concat(newP[i]).filter(i => i && i.length > 0).sort(this.sortString).join(' + '));
+                const terms = Array.from(new Set(pi.concat(newP[i]).filter(i => i && i.length > 0)))
+                    .sort(this.sortString);
+                candidates.push(terms);
+            }
+
+            const minTermCount = Math.min(...candidates.map(terms => terms.length));
+            const termCountMinimal = candidates.filter(terms => terms.length === minTermCount);
+            const minLiteralCount = Math.min(...termCountMinimal.map(terms => this.countLiterals(terms)));
+            const literalCountMinimal = termCountMinimal.filter(terms =>
+                this.countLiterals(terms) === minLiteralCount
+            );
+
+            for (const terms of literalCountMinimal) {
+                const expression = terms.join(' + ');
+                if (!result.includes(expression)) {
+                    result.push(expression);
+                }
             }
         }
 

@@ -53,4 +53,10 @@ test('QMC', () => {
     dc = [4, 6, 7, 9, 13];
     stringResult = qmc.solve(mt, dc, false, true, 4).expressions;
     expect(stringResult.length).toBe(new Set(stringResult).size);
+
+    // Petrick's method should prefer fewer literals when term count is equal
+    mt = [10, 13, 14, 15];
+    dc = [0, 1, 5, 11, 12];
+    stringResult = qmc.solve(mt, dc, false, true, 4).expressions;
+    expect(stringResult).toEqual(["A*B + A*C"]);
 });
