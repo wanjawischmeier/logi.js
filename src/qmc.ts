@@ -269,10 +269,10 @@ class QMC {
                 return aDec - bDec;
             }
         }
+    }
 
-        private countLiterals(terms: string[]) {
-            return terms.reduce((count, term) => count + (term.match(/[A-Z]/gi)?.length ?? 0), 0);
-        }
+    private countLiterals(terms: string[]) {
+        return terms.reduce((count, term) => count + (term.match(/[A-Z]/gi)?.length ?? 0), 0);
     }
 
     public solveFromExp(expression: string, isReturnObject = true) {
